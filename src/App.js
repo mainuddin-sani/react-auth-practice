@@ -17,9 +17,10 @@ import Col from "react-bootstrap/Col";
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 function App() {
+  const [validated, setValidated] = useState(false);
   const [user, setUser] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   // google sign in click event handler
   const googleSignInHandler = () => {
     signInWithPopup(auth, provider).then((result) => {
@@ -44,24 +45,28 @@ function App() {
     setEmail(e.target.value);
   };
 
-  const passwordHandler = (e)=>{
+  const passwordHandler = (e) => {
     setPassword(e.target.value);
-  }
-  console.log(email);
-  const onSubmitHandler = (e)=> {
-    e.preventDefault();
+  };
+
+  const onSubmitHandler = (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    if (form.checkValidity() === false) {
+      event.stopPropagation();
+    }
+    setValidated(true);
+
     createUserWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      // Signed in 
+    .then((userCredential)=>{
       const user = userCredential.user;
       console.log(user);
-    })
-    .catch((error) => {
+    }).catch((error) => {
       const errorCode = error.code;
       const errorMessage = error.message;
-      console.log(errorMessage);
     });
-  }
+  };
+
   return (
     <div className="App">
       {user.uid ? (
@@ -88,14 +93,19 @@ function App() {
       <Container>
         <Row>
           <Col lg={4} className="mx-auto">
-            <Form onClick={onSubmitHandler}>
+            <Form noValidate validated={validated} onClick={onSubmitHandler}>
               <Form.Group className="mb-3" controlId="formBasicEmail">
                 <Form.Label>Email address</Form.Label>
                 <Form.Control
+                  required
                   type="email"
                   onBlur={emailHandler}
                   placeholder="Enter email"
+                  autoComplete="off"
                 />
+                <Form.Control.Feedback type="invalid">
+                  Please choose a username.
+                </Form.Control.Feedback>
                 <Form.Text className="text-muted">
                   We'll never share your email with anyone else.
                 </Form.Text>
@@ -103,11 +113,19 @@ function App() {
 
               <Form.Group className="mb-3" controlId="formBasicPassword">
                 <Form.Label>Password</Form.Label>
-                <Form.Control type="password" onBlur={passwordHandler} placeholder="Password" />
+                <Form.Control
+                  type="password"
+                  autoComplete="off"
+                  onBlur={passwordHandler}
+                  placeholder="Password"
+                  required
+                />
+                <Form.Control.Feedback type="invalid">
+                  Invalid password
+                </Form.Control.Feedback>
               </Form.Group>
-              <Form.Group className="mb-3" controlId="formBasicCheckbox">
-                <Form.Check type="checkbox" label="Check me out" />
-              </Form.Group>
+
+              {/* <p>{error}</p> */}
               <Button variant="primary" type="submit">
                 Submit
               </Button>
