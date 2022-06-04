@@ -5,6 +5,9 @@ import {
   signInWithPopup,
   signOut,
   createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import app from "./firebase.init";
 import { useState } from "react";
@@ -17,6 +20,7 @@ import Col from "react-bootstrap/Col";
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 function App() {
+  const [registred, setRegistred] = useState(false);
   const [validated, setValidated] = useState(false);
   const [user, setUser] = useState("");
   const [email, setEmail] = useState("");
@@ -49,7 +53,12 @@ function App() {
     setPassword(e.target.value);
   };
 
+  const checkedLogin = (event) => {
+    setRegistred(event.target.checked);
+  };
+
   const onSubmitHandler = (event) => {
+    console.log('test');
     event.preventDefault();
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
@@ -57,15 +66,48 @@ function App() {
     }
     setValidated(true);
 
-    createUserWithEmailAndPassword(auth, email, password)
-    .then((userCredential)=>{
-      const user = userCredential.user;
-      console.log(user);
-    }).catch((error) => {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-    });
+    if(registred){
+      signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in 
+        const user = userCredential.user;
+        console.log(user);
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+      });
+    }else {
+      
+      createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        console.log(user);
+        setEmail("");
+        setPassword("");
+        verifyEmail();
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+      });
+    }
+    
   };
+  const resetPasswordHandler = ()=>{
+    sendPasswordResetEmail(auth, email)
+    .then(() => {
+      console.log('Password reset email sent!');
+    })
+  }
+
+  const verifyEmail = ()=> {
+    console.log('gese email')
+    sendEmailVerification(auth.currentUser)
+      .then(() => {
+        console.log('email sent');
+      })
+  }
 
   return (
     <div className="App">
@@ -75,7 +117,7 @@ function App() {
         <button onClick={googleSignInHandler}>Google sign In</button>
       )}
 
-      <div className="card">
+      {/* <div className="card">
         {user.photoURL ? (
           <img src={user.photoURL} alt="" />
         ) : (
@@ -89,11 +131,12 @@ function App() {
           <h4>Name : {user.displayName}</h4>
           <p>Email : {user.email}</p>
         </div>
-      </div>
+      </div> */}
       <Container>
         <Row>
           <Col lg={4} className="mx-auto">
-            <Form noValidate validated={validated} onClick={onSubmitHandler}>
+            <h2>Please {registred ? "login" : "registrer"} !!</h2>
+            <Form noValidate validated={validated} onSubmit={onSubmitHandler}>
               <Form.Group className="mb-3" controlId="formBasicEmail">
                 <Form.Label>Email address</Form.Label>
                 <Form.Control
@@ -125,9 +168,14 @@ function App() {
                 </Form.Control.Feedback>
               </Form.Group>
 
-              {/* <p>{error}</p> */}
+              <Form.Group className="mb-3" controlId="formBasicCheckbox">
+                <Form.Check type="checkbox" onChange={checkedLogin} label="Check me out" />
+              </Form.Group>
+              <Button onClick={resetPasswordHandler} variant="link">Forgot password ?</Button>
               <Button variant="primary" type="submit">
-                Submit
+                {
+                  registred ? "login" : "registrer"
+                }
               </Button>
             </Form>
           </Col>
